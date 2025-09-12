@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Modelo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      color: white;
+      font-family: 'Poppins', sans-serif;
+    }
+    #scrollContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow-y: auto;
+      pointer-events: none;
+    }
+    #dedicatoria {
+      padding: 40px;
+      font-size: 20px;
+      white-space: pre-wrap;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.7.0/lib/p5.min.js"></script>
+</head>
+<body>
+  <audio id="bgMusic" src="take-on-me.mp3" preload="auto"></audio>
+  <div id="scrollContainer">
+    <div id="dedicatoria"></div>
+  </div>
+  <script>
+    let frases = ["Haz click", "Solo sigue jaja"];
+    let clickCount = 0;
+    let fraseIndex = 0;
+    let gotas = [];
+    let mostrarDedicatoria = false;
+    let mensajeFinalizado = false;
+    let musicaIniciada = false;
+
+    let textoBase = "Holaaaa jajaja ... Muy feliz honomástico como tú dijiste alguna vez jsakasjsa ... Todavía recuerdo eso 👻👻👻 ... Que tal pá??? ... Cómo estás??? ... Pero esta vez tuve una idea bastante buena ... Una carta ... Pero para ponerle mi marca propia ... Una carta virtual ... Buena idea verdad??? ... Para serte sincero, los cumpleaños siempre me han parecido raros, literal están celebrado que uno se muere poco a poco :( ... Pero que se le va a hacer ... En serio espero que pases un feliz cumpleaños ... Y de verdad perdón por ser un mal hijo en repetidas ocasiones ... No me refiero a que haga algo como irme por un mal camino o juntarme con malas amistades ... Sino más bien me refiero a que muchas veces he sido muy indiferente contigo ... Y no te doy tanta relevancia como me gustaría ... En serio perdón por ello ... A veces siento que ya es muy tarde para reparar nuestra relación padre hijo ... A veces creo que todavía puedo hacer algo para ser más cercanos ... Jjkasjkas quien sabe 👻👻👻 ... Lo que sí es verdad y que nunca debes dudar ...  Es que te admiro y te quiero bastante ... En serio ... Has logrado construir todo lo que tienes ahora con esfuerzo y talento ... Nadie te ayudó ... En una situación en la que cualquier otro se hubiese rendido ... Tú te levantaste de entre los escombros y comenzaste a buscar algo más ... Una alternativa ... Una opción ... Una forma de salir adelante ... Y comenzaste a crear todo lo que tienes actualmente ... Cada amistad que ibas haciendo ... Cada contacto nuevo ... Cada proovedor ... Cada cliente ... Todo desde 0 ... jaja ... Te juro que es muy admirable ... Siempre has sido alguien bastante inteligente ... Y muy sabio ... Me has aconsejaddo en distintos momentos de mi vida ... Gracias a ti soy quien soy ahora ... Siempre estás allí para apoyarme en todo lo que necesito ... Muy feliz cumpleaños :D 👻👻👻 ... Saludas a la señora Dessire por ahí jajaska ... Para cuando la boda??? 👀";
+    let textoVisible = "";
+    let indexLetra = 0;
+    let tiempoEscritura = 0;
+    let velocidadEscritura = 100;
+    let borrando = false;
+    let borrarDesde = null;
+    let esperando = false;
+    let tiempoEspera = 0;
+    let borrandoFinal = false;
+    let coloresTexto = ["#ff8080", "#ff4da6", "#ff00ff"];
+
+    let partesABorrar = [
+      { texto: "También puedo hacer que ciertas partes del texto se borren una vez hayan sido escritas ...", borrado: false },
+      { texto: " Como esa ...", borrado: false }
+    ];
+
+    // PARTICULAS
+    let particulas = [];
+    let particulasLluviaActiva = true; // ahora siempre true hasta el final
+
+    // Array para color de letras dedicatoria
+    let coloresPorLetra = [];
+
+    function crearParticulas() {
+      // crea 100 partículas nuevas
+      for (let i = 0; i < 100; i++) {
+        particulas.push({
+          x: random(width),
+          y: random(height),
+          dx: random(-0.3, 0.3),
+          dy: random(-0.3, 0.3),
+          size: random(2, 4),
+          alpha: random(150, 255),
+          color: random(coloresTexto)
+        });
+      }
+    }
+
+    function moverYdibujarParticulas() {
+      for (let p of particulas) {
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if (p.x < 0 || p.x > width) p.dx *= -1;
+        if (p.y < 0 || p.y > height) p.dy *= -1;
+
+        fill(p.color + hex(Math.floor(p.alpha), 2));
+        noStroke();
+        ellipse(p.x, p.y, p.size);
+      }
+    }
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      textSize(26);
+      textAlign(CENTER, CENTER);
+      textFont('Poppins');
+      crearParticulas(); // Inicialmente las queremos activas
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+
+    function mousePressed() {
+      if (!musicaIniciada) {
+        let audio = document.getElementById("bgMusic");
+        audio.play();
+        musicaIniciada = true;
+      }
+
+      if (!mostrarDedicatoria) {
+        clickCount++;
+        if (clickCount % 2 === 0) {
+          fraseIndex = (fraseIndex + 1) % frases.length;
+          for (let g of gotas) {
+            g.texto = frases[fraseIndex];
+          }
+        }
+        if (clickCount >= 30) {
+          mostrarDedicatoria = true;
+          document.getElementById("scrollContainer").style.pointerEvents = "auto";
+          crearParticulas(); // refresca las partículas para dedicatoria
+        }
+
+        for (let i = 0; i < 20; i++) {
+          let ang = random(TWO_PI);
+          let speed = random(2, 6);
+          gotas.push({
+            x: mouseX,
+            y: mouseY,
+            dx: cos(ang) * speed,
+            dy: sin(ang) * speed,
+            texto: frases[fraseIndex],
+            alpha: 255,
+            explosion: true
+          });
+        }
+      }
+    }
+
+    function draw() {
+      background(0, 100);
+
+      // --- SIEMPRE muestra partículas de fondo ANTES DE LA DEDICATORIA si la lluvia está activa
+      if (!mostrarDedicatoria && particulasLluviaActiva) {
+        moverYdibujarParticulas();
+      }
+
+      // --- Partículas durante dedicatoria
+      if (mostrarDedicatoria) {
+        moverYdibujarParticulas();
+      }
+
+      // *** Ya NO mostramos el contador ***
+
+      // -- Lluvia de frases
+      if (!mostrarDedicatoria) {
+        textAlign(CENTER, CENTER);
+        textSize(24);
+        if (frameCount % 8 === 0) {
+          let x = random(width);
+          let y = -30;
+          let speed = random(2, 4);
+          gotas.push({
+            x: x,
+            y: y,
+            speed: speed,
+            alpha: 255,
+            texto: frases[fraseIndex],
+            explosion: false
+          });
+        }
+
+        for (let i = gotas.length - 1; i >= 0; i--) {
+          let g = gotas[i];
+          let color = random(coloresTexto);
+          fill(color + hex(Math.floor(g.alpha), 2));
+          text(g.texto, g.x, g.y);
+
+          if (g.explosion) {
+            g.x += g.dx;
+            g.y += g.dy;
+            g.alpha -= 5;
+          } else {
+            g.y += g.speed;
+            g.alpha -= 1.5;
+          }
+
+          if (g.alpha <= 0 || g.y > height + 50) {
+            gotas.splice(i, 1);
+          }
+        }
+      }
+
+      // Dedicatoria con máquina de escribir y colores dinámicos
+      if (mostrarDedicatoria) {
+        if (!borrandoFinal && !borrando && !esperando && millis() - tiempoEscritura > velocidadEscritura && indexLetra < textoBase.length) {
+          textoVisible += textoBase[indexLetra];
+          indexLetra++;
+          tiempoEscritura = millis();
+        }
+
+        for (let parte of partesABorrar) {
+          if (!parte.borrado && textoVisible.includes(parte.texto)) {
+            borrarDesde = textoVisible.lastIndexOf(parte.texto);
+            esperando = true;
+            tiempoEspera = millis();
+            parte.borrado = true;
+            break;
+          }
+        }
+
+        if (esperando && millis() - tiempoEspera >= 1300) {
+          borrando = true;
+          esperando = false;
+        }
+
+        if (borrando && millis() - tiempoEscritura > velocidadEscritura) {
+          textoVisible = textoVisible.slice(0, textoVisible.length - 1);
+          tiempoEscritura = millis();
+          if (textoVisible.length <= borrarDesde) {
+            borrando = false;
+          }
+        }
+
+        // Aseguramos tamaño del array de colores
+        while (coloresPorLetra.length < textoVisible.length) {
+          coloresPorLetra.push(random(coloresTexto));
+        }
+        while (coloresPorLetra.length > textoVisible.length) {
+          coloresPorLetra.pop();
+        }
+
+        // Cambia color de cada letra cada 4 frames
+        if (frameCount % 4 === 0) {
+          for (let i = 0; i < coloresPorLetra.length; i++) {
+            coloresPorLetra[i] = random(coloresTexto);
+          }
+        }
+
+        // Render dinámico dedicatoria
+        let dedicatoriaHTML = "";
+        for (let i = 0; i < textoVisible.length; i++) {
+          dedicatoriaHTML += `<span style="color:${coloresPorLetra[i]}">${textoVisible[i]}</span>`;
+        }
+        document.getElementById("dedicatoria").innerHTML = dedicatoriaHTML;
+      }
+    }
+  </script>
+</body>
+</html>
